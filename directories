@@ -1,0 +1,7 @@
+#!/bin/bash
+# Check if any directories exist in the current folder
+if [ "$(ls -d */ 2>/dev/null)" ]; then
+    ls -d */
+else
+    echo "No directories found in the current folder."
+fi
