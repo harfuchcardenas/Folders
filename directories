@@ -13,5 +13,5 @@ fi
 if [ "$(ls -d "$TARGET_DIR"/*/ 2>/dev/null)" ]; then
     ls -d "$TARGET_DIR"/*/
 else
-    echo "No directories found in '$TARGET_DIR'."
+    echo "No directories found here."
 fi
