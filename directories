@@ -1,7 +1,17 @@
 #!/bin/bash
-# Check if any directories exist in the current folder
-if [ "$(ls -d */ 2>/dev/null)" ]; then
-    ls -d */
+
+# Use the provided argument as the directory, or default to the current directory
+TARGET_DIR="${1:-.}"
+
+# Check if the provided path (or default) is a valid directory
+if [ ! -d "$TARGET_DIR" ]; then
+    echo "Error: '$TARGET_DIR' is not a valid directory."
+    exit 1
+fi
+
+# List only directories inside the specified or current folder
+if [ "$(ls -d "$TARGET_DIR"/*/ 2>/dev/null)" ]; then
+    ls -d "$TARGET_DIR"/*/
 else
-    echo "No directories found in the current folder."
+    echo "No directories found in '$TARGET_DIR'."
 fi
