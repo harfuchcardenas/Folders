@@ -11,7 +11,7 @@ fi
 
 # List only directories inside the specified or current folder
 if [ "$(ls -d "$TARGET_DIR"/*/ 2>/dev/null)" ]; then
-    ls -d "$TARGET_DIR"/*/
+    ls lA -d -1 "$TARGET_DIR"/*/
 else
     echo "No directories found here."
 fi
