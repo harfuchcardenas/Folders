@@ -3,52 +3,75 @@
 use strict; # Enforce stricter parsing and error checking
 use warnings; # Enable warnings for potential problems
 use Cwd 'abs_path'; # Import abs_path function from Cwd module for absolute path
-my $abs_directory;
-my $directory;
-# Check if an argument was provided
+use File::Spec; # Import File::Spec for path manipulation (e.g., building full paths)
+use File::Basename; # Import basename function for extracting file/directory names
+
+# Determine the target directory path.
+# If an argument is provided, use it; otherwise, default to the current directory ('.').
+my $directory_input;
 if (@ARGV) {
-    $directory = $ARGV[0];
-    # Resolve the absolute path to handle relative paths like '.' or '..'
-    # This makes the path unambiguous
-    $abs_directory = eval { abs_path($directory) };
-    print("Dir: $abs_directory\n");
-    # If an argument is given, use it as the directory
-    $directory = $ARGV[0];
-    # Check if the directory exists and is actually a directory
-    if (defined $abs_directory && -d $abs_directory) {
-        $abs_directory .= '/*/';
-        print "Processing directory: '$abs_directory'\n";
-        system("ls -lA -d $abs_directory");
-        exit 0;
-    } elsif (defined $abs_directory) {
-        # If abs_path succeeded but it's not a directory
-        print "Error: '$abs_directory' is not a valid directory.\n";
-        exit 1; # Exit with an error code
-    } else {
-        # If abs_path failed (e.g., directory does not exist or invalid path)
-        print "Error: The specified path '$directory' is invalid or does not exist.\n";
-        exit 1; # Exit with an error code
-    }
+    $directory_input = $ARGV[0];
 } else {
-    $directory = '.';
-    $abs_directory = eval {abs_path($directory) };
-    # If no argument is given, use the current directory as default
-    # The '.' represents the current directory
-    # Check if the directory exists and is actually a directory
-    if (defined $abs_directory && -d $abs_directory) {
-        $abs_directory .= '/*';
-        print "Processing directory: '$abs_directory'\n";
-        system("ls -lA -d $abs_directory");
-        exit 0;
-    } elsif (defined $abs_directory) {
-        $abs_directory = './*/';
-        # If abs_path succeeded but it's not a directory
-        print "Error: '$abs_directory' is not a valid directory.\n";
-        exit 1; # Exit with an error code
+    $directory_input = '.';
+    print "No directory argument provided. Using current directory as default.\n";
+}
+
+# Resolve the absolute path to handle relative paths like '.' or '..'.
+# This makes the path unambiguous and ensures operations work reliably.
+my $abs_directory_path = eval { abs_path($directory_input) };
+
+# Validate that the resolved path exists and is indeed a directory.
+# If not, print an appropriate error message and exit.
+unless (defined $abs_directory_path && -d $abs_directory_path) {
+    if (defined $abs_directory_path) {
+        # Path exists but is not a directory (e.g., it's a file)
+        print "Error: The path '$abs_directory_path' exists but is not a directory.\n";
     } else {
-        $abs_directory = './*/';
-        # If abs_path failed (e.g., directory does not exist or invalid path)
-        print "Error: The specified path '$abs_directory' is invalid or does not exist.\n";
-        exit 1; # Exit with an error code
+        # Path could not be resolved or does not exist (e.g., misspelled, non-existent)
+        print "Error: The specified path '$directory_input' is invalid or does not exist.\n";
+    }
+    exit 1; # Exit with a non-zero status to indicate an error
+}
+
+# Inform the user which directory is being processed.
+print "Target directory: '$abs_directory_path'\n";
+
+# --- START MODIFICATION: Using Perl's native directory functions ---
+
+my @subdirectories;
+
+# Open the target directory for reading.
+opendir(my $dh, $abs_directory_path) or die "Cannot open directory '$abs_directory_path': $!";
+
+# Read each entry in the directory.
+while (my $entry = readdir $dh) {
+    # Skip '.' (current directory) and '..' (parent directory) entries.
+    next if ($entry eq '.' || $entry eq '..');
+
+    # Construct the full path to the entry.
+    my $full_entry_path = File::Spec->catfile($abs_directory_path, $entry);
+
+    # Check if the entry is a directory.
+    if (-d $full_entry_path) {
+        push @subdirectories, $full_entry_path;
     }
 }
+
+# Close the directory handle.
+closedir $dh;
+
+# Print the found subdirectories.
+print "\n--- Subdirectories Found ---\n";
+if (@subdirectories) {
+    foreach my $dir_path (@subdirectories) {
+        # Extract just the directory name from the full path using basename()
+        my $dir_name = basename($dir_path);
+        print "'$dir_name'\n"; # Print only the directory name, enclosed in quotes for clarity
+    }
+} else {
+    print "No subdirectories found in '$abs_directory_path'.\n";
+}
+
+# --- END MODIFICATION ---
+
+exit 0; # Exit successfully
