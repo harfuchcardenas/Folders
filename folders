@@ -1,17 +1,54 @@
-#!/bin/bash
+#!/usr/bin/perl
 
-# Use the provided argument as the directory, or default to the current directory
-TARGET_DIR="${1:-.}"
-
-# Check if the provided path (or default) is a valid directory
-if [ ! -d "$TARGET_DIR" ]; then
-    echo "Error: '$TARGET_DIR' is not a valid directory."
-    exit 1
-fi
-
-# List only directories inside the specified or current folder
-if [ "$(ls -d "$TARGET_DIR"/*/ 2>/dev/null)" ]; then
-    ls lA -d -1 "$TARGET_DIR"/*/
-else
-    echo "No directories found here."
-fi
+use strict; # Enforce stricter parsing and error checking
+use warnings; # Enable warnings for potential problems
+use Cwd 'abs_path'; # Import abs_path function from Cwd module for absolute path
+my $abs_directory;
+my $directory;
+# Check if an argument was provided
+if (@ARGV) {
+    $directory = $ARGV[0];
+    # Resolve the absolute path to handle relative paths like '.' or '..'
+    # This makes the path unambiguous
+    $abs_directory = eval { abs_path($directory) };
+    print("Dir: $abs_directory\n");
+    # If an argument is given, use it as the directory
+    $directory = $ARGV[0];
+    # Check if the directory exists and is actually a directory
+    if (defined $abs_directory && -d $abs_directory) {
+        $abs_directory .= '/*/';
+        print "Processing directory: '$abs_directory'\n";
+        system("ls -lA -d $abs_directory");
+        exit 0;
+    } elsif (defined $abs_directory) {
+        # If abs_path succeeded but it's not a directory
+        print "Error: '$abs_directory' is not a valid directory.\n";
+        exit 1; # Exit with an error code
+    } else {
+        # If abs_path failed (e.g., directory does not exist or invalid path)
+        print "Error: The specified path '$directory' is invalid or does not exist.\n";
+        exit 1; # Exit with an error code
+    }
+} else {
+    $directory = '.';
+    $abs_directory = eval {abs_path($directory) };
+    # If no argument is given, use the current directory as default
+    # The '.' represents the current directory
+    # Check if the directory exists and is actually a directory
+    if (defined $abs_directory && -d $abs_directory) {
+        $abs_directory .= '/*';
+        print "Processing directory: '$abs_directory'\n";
+        system("ls -lA -d $abs_directory");
+        exit 0;
+    } elsif (defined $abs_directory) {
+        $abs_directory = './*/';
+        # If abs_path succeeded but it's not a directory
+        print "Error: '$abs_directory' is not a valid directory.\n";
+        exit 1; # Exit with an error code
+    } else {
+        $abs_directory = './*/';
+        # If abs_path failed (e.g., directory does not exist or invalid path)
+        print "Error: The specified path '$abs_directory' is invalid or does not exist.\n";
+        exit 1; # Exit with an error code
+    }
+}
