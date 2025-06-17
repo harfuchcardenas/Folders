@@ -6,6 +6,16 @@ use Cwd 'abs_path'; # Import abs_path function from Cwd module for absolute path
 use File::Spec; # Import File::Spec for path manipulation (e.g., building full paths)
 use File::Basename; # Import basename function for extracting file/directory names
 
+# ANSI escape codes for text colors and styles
+# \e[34m sets foreground color to blue
+# \e[1m sets text to bold
+# \e[0m resets all attributes (color, bold, etc.) to default
+use constant {
+    COLOR_BLUE  => "\e[34m",
+    COLOR_BOLD  => "\e[1m",
+    COLOR_RESET => "\e[0m",
+};
+
 # Determine the target directory path.
 # If an argument is provided, use it; otherwise, default to the current directory ('.').
 my $directory_input;
@@ -13,7 +23,7 @@ if (@ARGV) {
     $directory_input = $ARGV[0];
 } else {
     $directory_input = '.';
-    print "No directory argument provided. Using current directory as default.\n";
+    # Removed: print "No directory argument provided. Using current directory as default.\n";
 }
 
 # Resolve the absolute path to handle relative paths like '.' or '..'.
@@ -33,8 +43,7 @@ unless (defined $abs_directory_path && -d $abs_directory_path) {
     exit 1; # Exit with a non-zero status to indicate an error
 }
 
-# Inform the user which directory is being processed.
-print "Target directory: '$abs_directory_path'\n";
+# Removed: print "Target directory: '$abs_directory_path'\n";
 
 # --- START MODIFICATION: Using Perl's native directory functions ---
 
@@ -61,17 +70,20 @@ while (my $entry = readdir $dh) {
 closedir $dh;
 
 # Print the found subdirectories.
-print "\n--- Subdirectories Found ---\n";
 if (@subdirectories) {
     foreach my $dir_path (@subdirectories) {
         # Extract just the directory name from the full path using basename()
         my $dir_name = basename($dir_path);
-        print "'$dir_name'\n"; # Print only the directory name, enclosed in quotes for clarity
+        # Print only the directory name, enclosed in quotes for clarity, and with color
+        # Updated to use COLOR_BLUE and COLOR_BOLD
+        print COLOR_BOLD . COLOR_BLUE . "'$dir_name'" . COLOR_RESET . "\n";
     }
 } else {
+    # This message is still useful to indicate no subdirectories were found.
     print "No subdirectories found in '$abs_directory_path'.\n";
 }
 
 # --- END MODIFICATION ---
 
 exit 0; # Exit successfully
+
