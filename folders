@@ -23,7 +23,6 @@ if (@ARGV) {
     $directory_input = $ARGV[0];
 } else {
     $directory_input = '.';
-    # Removed: print "No directory argument provided. Using current directory as default.\n";
 }
 
 # Resolve the absolute path to handle relative paths like '.' or '..'.
@@ -43,11 +42,7 @@ unless (defined $abs_directory_path && -d $abs_directory_path) {
     exit 1; # Exit with a non-zero status to indicate an error
 }
 
-# Removed: print "Target directory: '$abs_directory_path'\n";
-
-# --- START MODIFICATION: Using Perl's native directory functions ---
-
-my @subdirectories;
+my @subdirectories_with_times;
 
 # Open the target directory for reading.
 opendir(my $dh, $abs_directory_path) or die "Cannot open directory '$abs_directory_path': $!";
@@ -62,28 +57,29 @@ while (my $entry = readdir $dh) {
 
     # Check if the entry is a directory.
     if (-d $full_entry_path) {
-        push @subdirectories, $full_entry_path;
+        # Get modification time in seconds since epoch. -M returns it in days, so multiply by 86400
+        my $mtime = (stat $full_entry_path)[9]; # stat returns a list, index 9 is mtime
+        push @subdirectories_with_times, { path => $full_entry_path, mtime => $mtime };
     }
 }
 
 # Close the directory handle.
 closedir $dh;
 
+# Sort the directories by modification time in descending order (newest first)
+# This replicates the --sort=time -r behavior of ls
+my @sorted_subdirectories = sort { $b->{mtime} <=> $a->{mtime} } @subdirectories_with_times;
+
 # Print the found subdirectories.
-if (@subdirectories) {
-    foreach my $dir_path (@subdirectories) {
+if (@sorted_subdirectories) {
+    foreach my $dir_info (@sorted_subdirectories) {
         # Extract just the directory name from the full path using basename()
-        my $dir_name = basename($dir_path);
+        my $dir_name = basename($dir_info->{path});
         # Print only the directory name, enclosed in quotes for clarity, and with color
-        # Updated to use COLOR_BLUE and COLOR_BOLD
         print COLOR_BOLD . COLOR_BLUE . "'$dir_name'" . COLOR_RESET . "\n";
     }
 } else {
-    # This message is still useful to indicate no subdirectories were found.
     print "No subdirectories found in '$abs_directory_path'.\n";
 }
 
-# --- END MODIFICATION ---
-
 exit 0; # Exit successfully
-
