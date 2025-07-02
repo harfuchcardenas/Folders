@@ -57,7 +57,7 @@ while (my $entry = readdir $dh) {
 
     # Check if the entry is a directory.
     if (-d $full_entry_path) {
-        # Get modification time in seconds since epoch. -M returns it in days, so multiply by 86400
+        # Get modification time in seconds since epoch.
         my $mtime = (stat $full_entry_path)[9]; # stat returns a list, index 9 is mtime
         push @subdirectories_with_times, { path => $full_entry_path, mtime => $mtime };
     }
@@ -66,9 +66,9 @@ while (my $entry = readdir $dh) {
 # Close the directory handle.
 closedir $dh;
 
-# Sort the directories by modification time in descending order (newest first)
-# This replicates the --sort=time -r behavior of ls
-my @sorted_subdirectories = sort { $b->{mtime} <=> $a->{mtime} } @subdirectories_with_times;
+# Sort the directories by modification time in ascending order (oldest first)
+# This is the reverse of ls -lA --sort=time -r
+my @sorted_subdirectories = sort { $a->{mtime} <=> $b->{mtime} } @subdirectories_with_times;
 
 # Print the found subdirectories.
 if (@sorted_subdirectories) {
