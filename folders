@@ -44,6 +44,9 @@ unless (defined $abs_directory_path && -d $abs_directory_path) {
 
 my @subdirectories_with_times;
 
+# Clear screen.
+system('clear');
+
 # Open the target directory for reading.
 opendir(my $dh, $abs_directory_path) or die "Cannot open directory '$abs_directory_path': $!";
 
